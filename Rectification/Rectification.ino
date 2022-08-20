@@ -46,9 +46,13 @@ int HoldUpButton = 0;             // Переменная которая счи�
 int HoldDownButton = 0;           // Переменная которая считает количество секунд пока нажата кнопка Down
 int HoldCancelButton = 0;         // Переменная которая считает количество секунд пока нажата кнопка Cancel
 float TempDelta = 0.2;            // Значение гестерезиса по температуре(в градусах цельсия) при котором колонна считается стабильной
+int SelfWorkTime = 1500           // Время работы колонны "на себя"
 int HeadSamplingTime = 10800;     // Время отбора голов в секундах(3 часа)
 
 int SetupStage = 0;               // Стадии настройки
+// 0 - Установка допустимого отклонения температуры при отборе тела
+// 1 - Установка длительности работы "на себя"
+// 2 - Установка длительности отбора голов
 int Stage = 0;                    // Стадии ректификации
 // 0 - настройки
 // 1 - нагрев куба
@@ -84,15 +88,14 @@ void loop(void) {
     lcd.createChar(1, bukva_I);      // Создаем символ под номером 1
     lcd.createChar(2, bukva_D);      // Создаем символ под номером 2
     lcd.createChar(3, bukva_L);      // Создаем символ под номером 3
-    lcd.createChar(4, bukva_P);      // Создаем символ под номером 3
-    lcd.createChar(5, bukva_IYI);      // Создаем символ под номером 3
-    lcd.createChar(6, bukva_B);      // Создаем символ под номером 3
-    lcd.createChar(7, bukva_G);      // Создаем символ под номером 3
-    lcd.createChar(8, bukva_CH);      // Создаем символ под номером 3
+    lcd.createChar(4, bukva_P);      // Создаем символ под номером 4
+    lcd.createChar(5, bukva_IYI);      // Создаем символ под номером 5
+    lcd.createChar(6, bukva_B);      // Создаем символ под номером 6
+    lcd.createChar(7, bukva_G);      // Создаем символ под номером 7
+    lcd.createChar(8, bukva_CH);      // Создаем символ под номером 8
 
 
-
-    if(SetupStage == 0)
+    if(SetupStage == 0)   // 0 - Установка допустимого отклонения температуры при отборе тела
     {
       lcd.setCursor(0, 0);
       lcd.print("\2O\4YCT\1MOE OTK\3.");
@@ -100,10 +103,10 @@ void loop(void) {
       lcd.print("TEM\4EPATYP\5:");
       lcd.setCursor(12, 1);
       lcd.print(TempDelta);
-      if (!digitalRead(UpButtonPin)) { 
+      if (!digitalRead(UpButtonPin)) {    // Если хотим дистилляцию - увеличиваем  
         TempDelta+=0.1;
       }
-      if (!digitalRead(DownButtonPin)) { 
+      if (!digitalRead(DownButtonPin)) { // Если хотим ректификацию - уменьшаем, но всегда нужно опасаться погрешности датчика
         TempDelta-=0.1;
         if(TempDelta<0)
         {
@@ -115,7 +118,38 @@ void loop(void) {
         delay(1000);
       }
     }
-    if(SetupStage == 1)
+    if(SetupStage == 1)   // 1 - Установка длительности работы "на себя"   
+    {
+      lcd.setCursor(0, 0);
+      lcd.print("                ");
+      lcd.setCursor(0, 0);
+      lcd.print("CTA\6\1\3\13:");
+      lcd.setCursor(0, 1);
+      lcd.print("                ");
+      lcd.setCursor(0, 1);
+      lcd.print("                ");
+      lcd.setCursor(0, 1);
+      int hours = SelfWorkTime/3600;
+      int minutes = (SelfWorkTime-(hours*3600))/60;
+      lcd.print(String(hours)+":"+String(minutes)+":00");
+      if (!digitalRead(UpButtonPin)) { 
+        SelfWorkTime+=60;
+      }
+      if (!digitalRead(DownButtonPin)) { 
+        SelfWorkTime-=60;
+        if(SelfWorkTime<0)
+        {
+          SelfWorkTime = 0;
+        }
+      }
+      if (!digitalRead(OkButtonPin)) { 
+      SetupStage = 2;
+      }
+      if (!digitalRead(CancelButtonPin)) { // Вернуться в начало
+      SetupStage = 0;
+      }
+    }
+    if(SetupStage == 2)   // 2 - Установка длительности отбора голов
     {
       lcd.setCursor(0, 0);
       lcd.print("                ");
@@ -142,12 +176,12 @@ void loop(void) {
       if (!digitalRead(OkButtonPin)) { 
       Stage = 1;
       }
-      if (!digitalRead(CancelButtonPin)) { 
+      if (!digitalRead(CancelButtonPin)) { // Вернуться в начало
       SetupStage = 0;
       }
     }
   }
-  if(Stage == 1)
+  if(Stage == 1)    // Ждем когда температура в колонне станет выше 60 градусов и переходим на стабилизацию фракций в колонне
   {
     Temp = Temp_Meas();
     lcd.createChar(1, bukva_G);      // Создаем символ под номером 1
@@ -163,31 +197,38 @@ void loop(void) {
       Stage = 2;
     }
   }
-  if(Stage == 2)
+  if(Stage == 2)    // даем колонне поработать на себя указанное время
   {
     int i;
     lcd.createChar(1, bukva_Ya);      // Создаем символ под номером 1
     lcd.createChar(2, bukva_B);      // Создаем символ под номером 2
     lcd.createChar(3, bukva_L);      // Создаем символ под номером 3
-    lcd.createChar(4, bukva_Mz);      // Создаем символ под номером 4
+    lcd.createChar(4, bukva_I);      // Создаем символ под номером 4
+    lcd.createChar(5, bukva_Z);      // Создаем символ под номером 5
+    lcd.createChar(6, bukva_TS);      // Создаем символ под номером 6
+    lcd.createChar(7, bukva_P);      // Создаем символ под номером 7
+    lcd.createChar(8, bukva_Mz);      // Создаем символ под номером 8
 
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("PA\2OTA HA CE\2\1!"); 
+    lcd.print("CTA\2\4\3\4\5:"); 
     lcd.setCursor(0, 1);
-    lcd.print("OCTA\3OC\4:");
-    for (i=0; i< 1500; i++) { // даем колонне поработать на себя 25 минут
-      lcd.setCursor(9, 1);
+    lcd.print("B KO\3OHHE:");
+    for (i=0; i< SelfWorkTime; i++) { 
+      lcd.setCursor(9, 0);
       lcd.print("       ");
-      lcd.setCursor(9, 1);
-      int minutes = (1500-i)/60;
-      int sec = (1500-i)-minutes*60; 
+      lcd.setCursor(9, 0);
+      int minutes = (SelfWorkTime-i)/60;
+      int sec = (SelfWorkTime-i)-minutes*60; 
       lcd.print(String(minutes)+":"+String(sec));
+      TempArray[i] = Temp_Meas();
+      lcd.setCursor(10, 1);
+      lcd.print(TempArray[i]);
       delay(1000);
     }
     Stage = 3;
   }
-  if(Stage == 3)
+  if(Stage == 3)    //Ждем пока температура в колонне стабилизируется и просим пользователя настроить отбор голов
   {
     int i;
     float TempArray[90];
@@ -199,7 +240,7 @@ void loop(void) {
     lcd.createChar(4, bukva_I);      // Создаем символ под номером 4
     lcd.createChar(5, bukva_Z);      // Создаем символ под номером 5
     lcd.createChar(6, bukva_TS);      // Создаем символ под номером 6
-    lcd.createChar(7, bukva_P);      // Создаем символ под номером 6
+    lcd.createChar(7, bukva_P);      // Создаем символ под номером 7
 
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -222,6 +263,7 @@ void loop(void) {
   }
   if(Stage == 4)
   {
+    Temp = Temp_Meas();
     lcd.createChar(1, bukva_G);      // Создаем символ под номером 1
     lcd.createChar(2, bukva_B);      // Создаем символ под номером 2
     lcd.createChar(3, bukva_L);      // Создаем символ под номером 3
@@ -239,8 +281,9 @@ void loop(void) {
     if (!digitalRead(OkButtonPin)) { 
       Stage = 5;
     }
-    if (!digitalRead(CancelButtonPin)) { 
-      Stage = 10;
+    if (!digitalRead(CancelButtonPin)) {    // Возвращаемся на начало настройки 
+      Stage = 0;
+      SetupStage = 0;
     }
   }
   if(Stage == 5)
@@ -258,16 +301,24 @@ void loop(void) {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("OT\2OP \1O\3OB!");
-    lcd.setCursor(0, 1);
-    lcd.print("OCTA\3OC\5:");
     for (i=0; i< HeadSamplingTime; i++) { // отбираем головы
-      lcd.setCursor(9, 1);
-      lcd.print("        ");
-      lcd.setCursor(9, 1);
-      int hours = (HeadSamplingTime-i)/3600;
-      int minutes = ((HeadSamplingTime-i)-(hours*3600))/60;
-      int sec = (HeadSamplingTime-i)-((minutes*60)+(hours*3600)); 
-      lcd.print(String(hours)+":"+String(minutes)+":"+String(sec));
+      if(i % 10 < 5)
+      {
+        lcd.setCursor(0, 1);
+        lcd.print("OCTA\3OC\5:        ");
+        lcd.setCursor(9, 1);
+        int hours = (HeadSamplingTime-i)/3600;
+        int minutes = ((HeadSamplingTime-i)-(hours*3600))/60;
+        int sec = (HeadSamplingTime-i)-((minutes*60)+(hours*3600)); 
+        lcd.print(String(hours)+":"+String(minutes)+":"+String(sec));
+      }
+      else
+      {
+              lcd.setCursor(0, 1);
+              lcd.print("B KO\3OHHE: ");
+              lcd.setCursor(0, 10);
+              lcd.print(Temp); 
+      }
 
       if (!digitalRead(CancelButtonPin)) { 
         lcd.setCursor(0, 0);
@@ -278,7 +329,7 @@ void loop(void) {
       if(Cancel_Stage == 1)
       {
         if (!digitalRead(OkButtonPin)) { 
-          Stage = 5;
+          i=HeadSamplingTime;
         }
         if (!digitalRead(CancelButtonPin)) { 
           Cancel_Stage = 0;
@@ -344,15 +395,47 @@ void loop(void) {
 
 if(Stage == 10)
   {
-    lcd.clear();
-    lcd.setCursor(4, 0);
-    lcd.print("Finish!!");
-    lcd.setCursor(3, 1);
-    lcd.print("Thank You!");
-    tone(piezoPin, 1000);                   // генерируем звук с частотой 100 Гц
-    delay(1000);
-    noTone(piezoPin);
-    delay(1000); 
+    Temp = Temp_Meas();
+    NeedTone = 1;
+    if(SetupStage==0)
+    {
+      lcd.createChar(1, bukva_P);      // Создаем символ под номером 1
+      lcd.createChar(2, bukva_B);      // Создаем символ под номером 2
+      lcd.createChar(3, bukva_L);      // Создаем символ под номером 3
+      lcd.createChar(4, bukva_CH);      // Создаем символ под номером 4
+      lcd.createChar(5, bukva_IYI);      // Создаем символ под номером 5
+
+    
+      lcd.setCursor(0, 0);
+      lcd.print("                ");
+      lcd.setCursor(2, 0);
+      lcd.print("XBOCT\5?!");
+      lcd.setCursor(0, 1);
+      lcd.print("                ");
+      lcd.setCursor(0, 1);
+      lcd.print("B KO\3OHHE: ");
+      SetupStage = 1;
+    }
+    if(SetupStage==1)
+    {
+      lcd.setCursor(10, 1);
+      lcd.print("      ");
+      lcd.setCursor(10, 1);    
+      lcd.print(Temp); 
+      if(NeedTone == 1)
+      {
+        tone(piezoPin, 1000);                   // генерируем звук с частотой 100 Гц
+        delay(1000);
+        noTone(piezoPin);
+        delay(1000);
+      }
+      if (!digitalRead(OkButtonPin)) { 
+      NeedTone = 0;
+      }
+      if (!digitalRead(CancelButtonPin)) { 
+      Stage = 6;
+      }
+    }
   }
 delay(100);  
 }
