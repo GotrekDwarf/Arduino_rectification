@@ -400,7 +400,7 @@ void loop(void) {
 if(Stage == 10)
   {
     Temp = Temp_Meas();
-    NeedTone = 1;
+    int NeedTone = 1;
     if(SetupStage==0)
     {
       lcd.createChar(1, bukva_P);      // Создаем символ под номером 1
