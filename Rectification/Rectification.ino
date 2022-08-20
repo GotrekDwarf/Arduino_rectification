@@ -48,6 +48,7 @@ int HoldCancelButton = 0;         // Переменная которая счи�
 float TempDelta = 0.2;            // Значение гестерезиса по температуре(в градусах цельсия) при котором колонна считается стабильной
 int SelfWorkTime = 1500;           // Время работы колонны "на себя"
 int HeadSamplingTime = 10800;     // Время отбора голов в секундах(3 часа)
+int NeedTone = 1;                 // Нужно ли издавать звуки из динамика
 
 int SetupStage = 0;               // Стадии настройки
 // 0 - Установка допустимого отклонения температуры при отборе тела
@@ -145,10 +146,10 @@ void loop(void) {
         }
       }
       if (!digitalRead(OkButtonPin)) { 
-      SetupStage = 2;
+        SetupStage = 2;
       }
       if (!digitalRead(CancelButtonPin)) { // Вернуться в начало
-      SetupStage = 0;
+        SetupStage = 0;
       }
     }
     if(SetupStage == 2)   // 2 - Установка длительности отбора голов
@@ -176,10 +177,10 @@ void loop(void) {
         }
       }
       if (!digitalRead(OkButtonPin)) { 
-      Stage = 1;
+        Stage = 1;
       }
       if (!digitalRead(CancelButtonPin)) { // Вернуться в начало
-      SetupStage = 0;
+        SetupStage = 0;
       }
     }
   }
@@ -318,10 +319,10 @@ void loop(void) {
       }
       else
       {
-              lcd.setCursor(0, 1);
-              lcd.print("B KO\3OHHE:      ");
-              lcd.setCursor(10, 1);
-              lcd.print(Temp); 
+        lcd.setCursor(0, 1);
+        lcd.print("B KO\3OHHE:      ");
+        lcd.setCursor(10, 1);
+        lcd.print(Temp); 
       }
 
       if (!digitalRead(CancelButtonPin)) { 
@@ -390,6 +391,7 @@ void loop(void) {
       lcd.print(Temp);
       if(((FixTemp+1<Temp) or (FixTemp-1>Temp)) and FixTemp>-300)
       {
+        SetupStage = 0;
         Stage = 10;
       }
     }
@@ -397,10 +399,9 @@ void loop(void) {
   }
   
 
-if(Stage == 10)
+  if(Stage == 10)
   {
     Temp = Temp_Meas();
-    int NeedTone = 1;
     if(SetupStage==0)
     {
       lcd.createChar(1, bukva_P);      // Создаем символ под номером 1
@@ -418,6 +419,7 @@ if(Stage == 10)
       lcd.print("                ");
       lcd.setCursor(0, 1);
       lcd.print("B KO\3OHHE: ");
+      NeedTone = 1;
       SetupStage = 1;
     }
     if(SetupStage==1)
@@ -433,12 +435,16 @@ if(Stage == 10)
         noTone(piezoPin);
         delay(1000);
       }
-      if (!digitalRead(OkButtonPin)) { 
+    }
+    if (!digitalRead(OkButtonPin)) { 
       NeedTone = 0;
-      }
-      if (!digitalRead(CancelButtonPin)) { 
+    }
+    if (!digitalRead(CancelButtonPin)) { 
+      Temp = Temp_Meas();
+      FixTemp = Temp;
       Stage = 6;
-      }
+      SetupStage = 0;
+      return;
     }
   }
 delay(100);  
