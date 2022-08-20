@@ -49,6 +49,7 @@ float TempDelta = 0.2;            // Значение гестерезиса п�
 int SelfWorkTime = 1500;           // Время работы колонны "на себя"
 int HeadSamplingTime = 10800;     // Время отбора голов в секундах(3 часа)
 int NeedTone = 1;                 // Нужно ли издавать звуки из динамика
+int DBLCLCProtect = 0;            // Надо для защиты от двойного клика кнопкой
 
 int SetupStage = 0;               // Стадии настройки
 // 0 - Установка допустимого отклонения температуры при отборе тела
@@ -85,7 +86,10 @@ void setup(void) {
 
 void loop(void) {
   float TempArray[90];
-  
+  if (digitalRead(OkButtonPin) && digitalRead(CancelButtonPin)){
+    DBLCLCProtect = 0;
+  }
+         
   if(Stage == 0)
   {
     lcd.createChar(1, bukva_I);      // Создаем символ под номером 1
@@ -116,9 +120,9 @@ void loop(void) {
           TempDelta = 0;
         }
       }
-      if (!digitalRead(OkButtonPin)) { 
+      if (!digitalRead(OkButtonPin) && DBLCLCProtect == 0) { 
         SetupStage=1;
-        delay(1000);
+        DBLCLCProtect = 1;
       }
     }
     if(SetupStage == 1)   // 1 - Установка длительности работы "на себя"   
@@ -145,11 +149,13 @@ void loop(void) {
           SelfWorkTime = 0;
         }
       }
-      if (!digitalRead(OkButtonPin)) { 
+      if (!digitalRead(OkButtonPin) && DBLCLCProtect == 0) { 
         SetupStage = 2;
+        DBLCLCProtect = 1;
       }
-      if (!digitalRead(CancelButtonPin)) { // Вернуться в начало
+      if (!digitalRead(CancelButtonPin) && DBLCLCProtect == 0) { // Вернуться в начало
         SetupStage = 0;
+        DBLCLCProtect = 1;
       }
     }
     if(SetupStage == 2)   // 2 - Установка длительности отбора голов
@@ -176,11 +182,13 @@ void loop(void) {
           HeadSamplingTime = 0;
         }
       }
-      if (!digitalRead(OkButtonPin)) { 
+      if (!digitalRead(OkButtonPin) && DBLCLCProtect == 0) { 
         Stage = 1;
+        DBLCLCProtect = 1;
       }
-      if (!digitalRead(CancelButtonPin)) { // Вернуться в начало
+      if (!digitalRead(CancelButtonPin) && DBLCLCProtect == 0) { // Вернуться в начало
         SetupStage = 0;
+        DBLCLCProtect = 1;
       }
     }
   }
@@ -199,8 +207,9 @@ void loop(void) {
     {
       Stage = 2;
     }
-    if (!digitalRead(CancelButtonPin)) { // Не ждать прогрева колонны, сразу перейти к работе на себя. В основном для дебага.
+    if (!digitalRead(CancelButtonPin) && DBLCLCProtect == 0) { // Не ждать прогрева колонны, сразу перейти к работе на себя. В основном для дебага.
       Stage = 2;
+      DBLCLCProtect = 1;
     }
   }
   if(Stage == 2)    // даем колонне поработать на себя указанное время
@@ -283,12 +292,14 @@ void loop(void) {
     delay(1000);
     noTone(piezoPin);
     delay(1000);
-    if (!digitalRead(OkButtonPin)) { 
+    if (!digitalRead(OkButtonPin) && DBLCLCProtect == 0) { 
       Stage = 5;
+      DBLCLCProtect = 1;
     }
-    if (!digitalRead(CancelButtonPin)) {    // Возвращаемся на начало настройки 
+    if (!digitalRead(CancelButtonPin) && DBLCLCProtect == 0) {    // Возвращаемся на начало настройки 
       Stage = 0;
       SetupStage = 0;
+      DBLCLCProtect = 1;
     }
   }
   if(Stage == 5)
@@ -325,23 +336,26 @@ void loop(void) {
         lcd.print(Temp); 
       }
 
-      if (!digitalRead(CancelButtonPin)) { 
+      if (!digitalRead(CancelButtonPin) && DBLCLCProtect == 0) { // ЭТА ХРЕНОТА ПОКА НЕ РАБОТАЕТ!!!! НАДО ПЕРЕДЕЛАТЬ!!!!
         lcd.setCursor(0, 0);
         lcd.print("OTMEH\6T\5 OT\2OP?");
         Cancel_Stage = 1;
+        DBLCLCProtect = 1;
       }
 
       if(Cancel_Stage == 1)
       {
-        if (!digitalRead(OkButtonPin)) { 
+        if (!digitalRead(OkButtonPin) && DBLCLCProtect == 0) { 
           i=HeadSamplingTime;
+          DBLCLCProtect = 1;
         }
-        if (!digitalRead(CancelButtonPin)) { 
+        if (!digitalRead(CancelButtonPin) && DBLCLCProtect == 0) { 
           Cancel_Stage = 0;
           lcd.setCursor(0, 0);
           lcd.print("                ");
           lcd.setCursor(0, 0);
           lcd.print("OT\2OP \1O\3OB!");
+          DBLCLCProtect = 1;
         }
       }
       delay(1000);
@@ -436,18 +450,20 @@ void loop(void) {
         delay(1000);
       }
     }
-    if (!digitalRead(OkButtonPin)) { 
+    if (!digitalRead(OkButtonPin) && DBLCLCProtect == 0) { 
       NeedTone = 0;
+      DBLCLCProtect = 1;
     }
-    if (!digitalRead(CancelButtonPin)) { 
+    if (!digitalRead(CancelButtonPin) && DBLCLCProtect == 0) { 
       Temp = Temp_Meas();
       FixTemp = Temp;
       Stage = 6;
       SetupStage = 0;
+      DBLCLCProtect = 1;
       return;
     }
   }
-delay(100);  
+  delay(100); 
 }
 
 float Temp_Meas(void) {
