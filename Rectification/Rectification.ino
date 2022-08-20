@@ -319,8 +319,8 @@ void loop(void) {
       else
       {
               lcd.setCursor(0, 1);
-              lcd.print("B KO\3OHHE: ");
-              lcd.setCursor(0, 10);
+              lcd.print("B KO\3OHHE:      ");
+              lcd.setCursor(10, 1);
               lcd.print(Temp); 
       }
 
