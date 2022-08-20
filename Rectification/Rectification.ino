@@ -86,21 +86,22 @@ void setup(void) {
 
 void loop(void) {
   float TempArray[90];
-  if (digitalRead(OkButtonPin) && digitalRead(CancelButtonPin)){
+  if (digitalRead(OkButtonPin) && digitalRead(CancelButtonPin)){    // Если отпущены обе кнопки Ок и Cancel - разрешить их нажимать
     DBLCLCProtect = 0;
   }
          
   if(Stage == 0)
   {
-    lcd.createChar(1, bukva_I);      // Создаем символ под номером 1
-    lcd.createChar(2, bukva_D);      // Создаем символ под номером 2
-    lcd.createChar(3, bukva_L);      // Создаем символ под номером 3
-    lcd.createChar(4, bukva_P);      // Создаем символ под номером 4
-    lcd.createChar(5, bukva_IYI);      // Создаем символ под номером 5
-    lcd.createChar(6, bukva_B);      // Создаем символ под номером 6
-    lcd.createChar(7, bukva_G);      // Создаем символ под номером 7
-    lcd.createChar(8, bukva_CH);      // Создаем символ под номером 8
-
+    if(SetupStage != 1){
+      lcd.createChar(1, bukva_I);      // Создаем символ под номером 1
+      lcd.createChar(2, bukva_D);      // Создаем символ под номером 2
+      lcd.createChar(3, bukva_L);      // Создаем символ под номером 3
+      lcd.createChar(4, bukva_P);      // Создаем символ под номером 4
+      lcd.createChar(5, bukva_IYI);      // Создаем символ под номером 5
+      lcd.createChar(6, bukva_B);      // Создаем символ под номером 6
+      lcd.createChar(7, bukva_G);      // Создаем символ под номером 7
+      lcd.createChar(8, bukva_CH);      // Создаем символ под номером 8
+    }
 
     if(SetupStage == 0)   // 0 - Установка допустимого отклонения температуры при отборе тела
     {
@@ -127,12 +128,18 @@ void loop(void) {
     }
     if(SetupStage == 1)   // 1 - Установка длительности работы "на себя"   
     {
+      lcd.createChar(1, bukva_Ya);      // Создаем символ под номером 1
+      lcd.createChar(2, bukva_B);      // Создаем символ под номером 2
+      lcd.createChar(3, bukva_L);      // Создаем символ под номером 3
+      lcd.createChar(4, bukva_I);      // Создаем символ под номером 4
+      lcd.createChar(5, bukva_Z);      // Создаем символ под номером 5
+      lcd.createChar(6, bukva_TS);      // Создаем символ под номером 6
+      lcd.createChar(7, bukva_P);      // Создаем символ под номером 7
+  
       lcd.setCursor(0, 0);
       lcd.print("                ");
       lcd.setCursor(0, 0);
-      lcd.print("CTA\6\1\3\13:");
-      lcd.setCursor(0, 1);
-      lcd.print("                ");
+      lcd.print("CTA\2\4\3\4\5A\6\4\1:");
       lcd.setCursor(0, 1);
       lcd.print("                ");
       lcd.setCursor(0, 1);
@@ -230,6 +237,9 @@ void loop(void) {
     lcd.setCursor(0, 1);
     lcd.print("B KO\3OHHE:");
     for (i=0; i< SelfWorkTime; i++) { 
+      if (digitalRead(OkButtonPin) && digitalRead(CancelButtonPin)){    // Если отпущены обе кнопки Ок и Cancel - разрешить их нажимать
+        DBLCLCProtect = 0;
+      }
       lcd.setCursor(9, 0);
       lcd.print("       ");
       lcd.setCursor(9, 0);
@@ -312,37 +322,45 @@ void loop(void) {
     lcd.createChar(4, bukva_CH);      // Создаем символ под номером 4
     lcd.createChar(5, bukva_Mz);      // Создаем символ под номером 5
     lcd.createChar(6, bukva_I);      // Создаем символ под номером 6
+    lcd.createChar(7, bukva_D);      // Создаем символ под номером 6
+
 
 
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("OT\2OP \1O\3OB!");
     for (i=0; i< HeadSamplingTime; i++) { // отбираем головы
-      if(i % 10 < 5)
-      {
-        lcd.setCursor(0, 1);
-        lcd.print("OCTA\3OC\5:        ");
-        lcd.setCursor(9, 1);
-        int hours = (HeadSamplingTime-i)/3600;
-        int minutes = ((HeadSamplingTime-i)-(hours*3600))/60;
-        int sec = (HeadSamplingTime-i)-((minutes*60)+(hours*3600)); 
-        lcd.print(String(hours)+":"+String(minutes)+":"+String(sec));
+      if (digitalRead(OkButtonPin) && digitalRead(CancelButtonPin)){    // Если отпущены обе кнопки Ок и Cancel - разрешить их нажимать
+        DBLCLCProtect = 0;
       }
-      else
-      {
-        lcd.setCursor(0, 1);
-        lcd.print("B KO\3OHHE:      ");
-        lcd.setCursor(10, 1);
-        lcd.print(Temp); 
+      if(Cancel_Stage == 0){
+        if(i % 10 < 5)
+        {
+          lcd.setCursor(0, 1);
+          lcd.print("OCTA\3OC\5:        ");
+          lcd.setCursor(9, 1);
+          int hours = (HeadSamplingTime-i)/3600;
+          int minutes = ((HeadSamplingTime-i)-(hours*3600))/60;
+          int sec = (HeadSamplingTime-i)-((minutes*60)+(hours*3600)); 
+          lcd.print(String(hours)+":"+String(minutes)+":"+String(sec));
+        }
+        else
+        {
+          lcd.setCursor(0, 1);
+          lcd.print("B KO\3OHHE:      ");
+          lcd.setCursor(10, 1);
+          lcd.print(Temp); 
+        }
+  
+        if (!digitalRead(CancelButtonPin) && DBLCLCProtect == 0) { 
+          lcd.setCursor(0, 0);
+          lcd.print("OTMEH\6T\5 OT\2OP?");
+          lcd.setCursor(0, 1);
+          lcd.print("\7A           HET");
+          Cancel_Stage = 1;
+          DBLCLCProtect = 1;
+        }
       }
-
-      if (!digitalRead(CancelButtonPin) && DBLCLCProtect == 0) { // ЭТА ХРЕНОТА ПОКА НЕ РАБОТАЕТ!!!! НАДО ПЕРЕДЕЛАТЬ!!!!
-        lcd.setCursor(0, 0);
-        lcd.print("OTMEH\6T\5 OT\2OP?");
-        Cancel_Stage = 1;
-        DBLCLCProtect = 1;
-      }
-
       if(Cancel_Stage == 1)
       {
         if (!digitalRead(OkButtonPin) && DBLCLCProtect == 0) { 
