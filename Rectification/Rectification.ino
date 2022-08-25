@@ -90,7 +90,7 @@ void loop(void) {
     DBLCLCProtect = 0;
   }
          
-  if(Stage == 0)
+  if(Stage == 0)                              // 0 - настройки
   {
     if(SetupStage != 1){
       lcd.createChar(1, bukva_I);      // Создаем символ под номером 1
@@ -219,7 +219,7 @@ void loop(void) {
       DBLCLCProtect = 1;
     }
   }
-  if(Stage == 2)    // даем колонне поработать на себя указанное время
+  if(Stage == 2)                      // даем колонне поработать на себя указанное время
   {
     int i;
     lcd.createChar(1, bukva_Ya);      // Создаем символ под номером 1
@@ -253,7 +253,7 @@ void loop(void) {
     }
     Stage = 3;
   }
-  if(Stage == 3)    //Ждем пока температура в колонне стабилизируется и просим пользователя настроить отбор голов
+  if(Stage == 3)     //Ждем пока температура в колонне стабилизируется и просим пользователя настроить отбор голов
   {
     int i;
     Temp = Temp_Meas();
@@ -285,7 +285,7 @@ void loop(void) {
     }
     Stage = 4;
   }
-  if(Stage == 4)
+  if(Stage == 4)                      // Пищим, просим пользователя начинать отбор голов
   {
     Temp = Temp_Meas();
     lcd.createChar(1, bukva_G);      // Создаем символ под номером 1
@@ -312,7 +312,7 @@ void loop(void) {
       DBLCLCProtect = 1;
     }
   }
-  if(Stage == 5)
+  if(Stage == 5)                    // Отбираем головы по времени
   {
     int i;
     int Cancel_Stage = 0;
@@ -395,7 +395,7 @@ void loop(void) {
     noTone(piezoPin);
     delay(1000);
   }
-  if(Stage == 6)
+  if(Stage == 6)                        // Самое важное! Отбираем тело, пока не начнется отклонение температуры в колонне
   {
     Temp = Temp_Meas();
     if(SetupStage==0)
@@ -431,7 +431,7 @@ void loop(void) {
   }
   
 
-  if(Stage == 10)
+  if(Stage == 10)                     // Пищим, сообщаем всем что пошли хвосты
   {
     Temp = Temp_Meas();
     if(SetupStage==0)
