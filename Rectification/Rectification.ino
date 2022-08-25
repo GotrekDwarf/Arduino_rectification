@@ -421,7 +421,7 @@ void loop(void) {
       lcd.print("      ");
       lcd.setCursor(10, 1);    
       lcd.print(Temp);
-      if(((FixTemp+1<Temp) or (FixTemp-1>Temp)) and FixTemp>-300)
+      if(((FixTemp+TempDelta<Temp) or (FixTemp-TempDelta>Temp)) and FixTemp>-300)
       {
         SetupStage = 0;
         Stage = 10;
