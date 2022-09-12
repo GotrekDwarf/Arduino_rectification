@@ -50,6 +50,8 @@ int SelfWorkTime = 1500;           // Время работы колонны "н
 int HeadSamplingTime = 10800;     // Время отбора голов в секундах(3 часа)
 int NeedTone = 1;                 // Нужно ли издавать звуки из динамика
 int DBLCLCProtect = 0;            // Надо для защиты от двойного клика кнопкой
+int FaultTailKeeper = 0;          // Защита от погрешности при отборе тела
+
 
 int SetupStage = 0;               // Стадии настройки
 // 0 - Установка допустимого отклонения температуры при отборе тела
@@ -423,8 +425,16 @@ void loop(void) {
       lcd.print(Temp);
       if(((FixTemp+TempDelta<Temp) or (FixTemp-TempDelta>Temp)) and FixTemp>-300)
       {
-        SetupStage = 0;
-        Stage = 10;
+        FaultTailKeeper++;
+        if(FaultTailKeeper > 3)
+        {
+          SetupStage = 0;
+          Stage = 10;
+        }
+      }
+      else
+      {
+        FaultTailKeeper = 0;
       }
     }
     
