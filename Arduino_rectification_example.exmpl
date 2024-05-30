@@ -1,0 +1,133 @@
+#include <U8glib.h>
+#include <Adafruit_NeoPixel.h>
+
+#define PIN 12 // номер порта к которому подключен модуль
+#define LEFT_ROTATE 1 
+#define RIGHT_ROTATE 2 
+#define CLICK_ENCODER 3 
+#define LONG_CLICK_ENCODER 4
+#define count_led 3 // количество светодиодов 
+#define btn_long_push 1000   // Длительность долинного нажатия кнопки
+
+volatile uint8_t lastcomb=7, enc_state, btn_push=0;
+volatile int enc_rotation=0, btn_enc_rotate=0, enc_old_rotation=0;
+volatile boolean btn_press=0;
+volatile uint32_t timer;
+int BEEPER = 7;
+bool beeperOn = false;
+
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(count_led, PIN, NEO_GRB + NEO_KHZ800); //first number change does distance between colors
+U8GLIB_NHD_C12864 u8g(13, 11, 10, 9, 8);  // SPI Com: SCK = 13, MOSI = 11, CS = 10, A0 = 9, RST = 8
+
+int activeMenuPoint = 0;
+char* firstMenu[] {
+  "Distillation",
+  "Rectification",
+  "Setup"
+};
+
+void setup(void) {
+  pixels.begin();
+  pixels.show(); // Устанавливаем все светодиоды в состояние "Выключено"
+  pixels.setPixelColor(0, 250, 0, 0); // Назначаем для первого светодиода цвет "Зеленый"
+  pixels.setPixelColor(1, 250, 0, 0); // Назначаем для второго светодиода цвет "Зеленый"
+  pixels.setPixelColor(2, 250, 0, 0); // Назначаем для третьего светодиода цвет "Зеленый"
+  pixels.setPixelColor(3, 250, 0, 0); // Назначаем для четвертого светодиода цвет "Зеленый"
+  pixels.setBrightness(100);
+  pixels.show();
+
+  u8g.setContrast(75);
+  u8g.setFont(u8g_font_unifont);
+  u8g.setRot180();
+  u8g.setDefaultForegroundColor();
+
+  pinMode(A8,INPUT_PULLUP); // ENC-A
+  pinMode(A9,INPUT_PULLUP); // ENC-B
+  pinMode(A10,INPUT_PULLUP); // BUTTON
+
+  PCICR |= (1 << PCIE2);    // enable PCINT2
+  PCMSK2 |= (1 << PCINT16); // mask for bit0 of port K (A8)
+  PCMSK2 |= (1 << PCINT17); // mask for bit1 of port K (A9)
+  PCMSK2 |= (1 << PCINT18); // mask for bit3 of port K (A10)
+
+  pinMode(BEEPER, OUTPUT); // Инициализируем под зумер
+  
+  Serial.begin(9600);
+}
+
+void drawFirstMenu(void) {
+  u8g.setFont(u8g_font_6x12);
+  u8g.setFontRefHeightExtendedText();
+  u8g.setFontPosTop();
+  int h = u8g.getFontAscent() - u8g.getFontDescent();
+  int w = u8g.getStrWidth(firstMenu[activeMenuPoint]);
+  for (int i = 0; i < sizeof(firstMenu)/sizeof(firstMenu[0]); i++)
+  {
+    u8g.drawStr(2, h * i+1, firstMenu[i]);
+  }
+  u8g.drawFrame(0, h * activeMenuPoint, w+3, h+2);
+}
+
+ISR (PCINT2_vect) //Обработчик прерывания от пинов A1, A2, A3
+{
+  uint8_t comb = bitRead(PINK, 2) << 2 | bitRead( PINK, 1)<<1 | bitRead(PINK, 0); //считываем состояние пинов энкодера и кнопки
+ if (comb == 3 && lastcomb == 7) btn_press = 1; //Если было нажатие кнопки, то меняем статус
+ 
+ if (comb == 4)                         //Если было промежуточное положение энкодера, то проверяем его предыдущее состояние 
+ {
+    if (lastcomb == 5) enc_state = RIGHT_ROTATE; //вращение по часовой стрелке
+    if (lastcomb == 6) enc_state = LEFT_ROTATE; //вращение против часовой   
+  }
+
+  if (comb == 7 && lastcomb == 3 && btn_press) //Если было отпускание кнопки, то проверяем ее предыдущее состояние 
+  {
+    if (millis() - timer > btn_long_push)         // проверяем сколько прошло миллисекунд
+    {
+      enc_state = LONG_CLICK_ENCODER;                              // было длинное нажатие 
+    } else {
+              enc_state = CLICK_ENCODER;                    // было нажатие 
+            }
+      btn_press = 0;                           //обнулить статус кнопки
+  }
+   
+  timer = millis();                       //сброс таймера
+  lastcomb = comb;                        //сохраняем текущее состояние энкодера
+}
+
+void loop(void) {
+  u8g.firstPage();
+
+  do {
+    drawFirstMenu();
+  } while( u8g.nextPage() );  
+  
+  switch (enc_state)
+  {
+    case RIGHT_ROTATE:   
+    {
+        if(activeMenuPoint<sizeof(firstMenu)/sizeof(firstMenu[0])-1) activeMenuPoint++;
+    }
+      break;
+    case LEFT_ROTATE:   
+    {
+        if(activeMenuPoint>0) activeMenuPoint--;
+    }
+      break;
+    case CLICK_ENCODER:   
+    {
+      if(beeperOn == false)
+      {
+        digitalWrite(BEEPER, 1);
+        beeperOn = true;
+      }
+      else
+      
+      {
+        digitalWrite(BEEPER, 0);
+        beeperOn = false;
+      }
+    }
+      break;
+  }
+  enc_state = 0; //обнуляем статус энкодера
+}
